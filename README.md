@@ -20,13 +20,17 @@ TOM_FACILITY_CLASSES = [
 ]
 ```
 
-Add your API key (or a reference to the environment variable) to the `FACILITIES` dictionary inside `settings.py`:
+Add your API keys to the `FACILITIES` dictionary inside `settings.py`:
 
 ```python
 FACILITIES = {
    ...
     'MMT': {
-        'api_key': os.getenv('MMT_API_KEY', MMT_API_KEY),
+        'programs': [
+            ('3hirty2wocharacterapitoken4ormmt', 'Human-Readable Program Name'),
+            ('1notherverylong6exadecimalstring', 'The Name of Another Program'),
+            ...
+        ],
     }
 }
 ```
