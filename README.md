@@ -1,7 +1,5 @@
 # TOM MMT
-MMT Observatory module for the TOM Toolkit, based on Sam Wyatt's [MMT API interface](https://github.com/swyatt7/mmtapi).
-
-**Currently only Binospec is supported.** We hope to support MMIRS soon.
+MMT Observatory module for the TOM Toolkit, based on Sam Wyatt's [MMT API interface](https://github.com/swyatt7/mmtapi). Binospec and MMIRS are supported.
 
 # Installation and Setup
 Install this module into your TOM environment:
