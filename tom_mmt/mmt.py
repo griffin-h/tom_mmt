@@ -10,8 +10,7 @@ from django.conf import settings
 import requests
 from datetime import datetime
 import re
-from django.utils.safestring import mark_safe
-from crispy_forms.layout import Div, HTML
+
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
     magnitude = forms.FloatField()
