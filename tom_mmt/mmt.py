@@ -87,6 +87,7 @@ class MMTMMIRSImagingForm(MMTBaseObservationForm):
     ])
     dither_size = forms.FloatField(min_value=20, initial=30)
     exposure_time = forms.IntegerField(min_value=1,initial=60,help_text=mark_safe("Different for different filters. More info: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>Eposure Times</a>."))
+    notes = forms.CharField(initial='Imaging of a GW follow-up with expected K ~ {FILL IN} mag. Please use a random 30 x 4 (4 exposures per position) dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers).We do not care about the position angle so adjust as needed for the guide star. For MMIRS Imaging (Y + J-band): This is a rapid TOO request for imaging of a potential GW counterpart with expected J ~ {FILL IN} mag. Please use a random 30 dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers). Please let us know if you have any questions - thanks! For any questions or issues please contact the PI (leave your email or cell number)',widget=forms.Textarea(attrs={'rows':8}),required=False,help_text=mark_safe("Please update the Note template based on the filter you are using. More information about MMIRS observations: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>MMIRS BASICS</a>."))
 
 
     def layout(self):
@@ -224,7 +225,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
     finder_chart = forms.FileField()
     exposure_time = forms.IntegerField(min_value=1,initial=180)
     number_of_exposures = forms.IntegerField(initial=4, min_value=1)
-    notes = forms.CharField(initial='This is rapid ToO of GW follow-up. For questions please reach out to {fill your Name} at {fill your email}',widget=forms.Textarea(attrs={'rows':8}),required=False,help_text=mark_safe("More information about MMIRS observations: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>MMIRS BASICS</a>."))
+    notes = forms.CharField(initial='Please use a random 30" dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers).We do not care about the position angle so adjust as needed for the guide star. Please let us know if you have any questions - thanks! For any questions or issues please contact the PI (leave your email or cell number)',widget=forms.Textarea(attrs={'rows':8}),required=False,help_text=mark_safe(" More information about MMIRS observations: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>MMIRS BASICS</a>."))
 
 
     def layout(self):
