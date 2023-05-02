@@ -16,9 +16,7 @@ from crispy_forms.layout import Div, HTML
 class MMTBaseObservationForm(BaseRoboticObservationForm):
     magnitude = forms.FloatField()
     visits = forms.IntegerField(initial=1, min_value=1)
-    exposure_time = forms.IntegerField(min_value=1)
-    number_of_exposures = forms.IntegerField(initial=2, min_value=1)
-    notes = forms.CharField(initial='This is rapid ToO of GW follow-up. For questions please reach out to {fill your Name} at {fill your email}',widget=forms.Textarea(attrs={'rows':8}),required=False)
+    notes = forms.CharField(widget=forms.Textarea(attrs={'rows':8}), required=False)
     priority = forms.ChoiceField(choices=[
         (3, 'low'),
         (2, 'medium'),
@@ -39,7 +37,7 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
 
 class MMTImagingForm(MMTBaseObservationForm):
     filter = forms.ChoiceField(choices=[('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
-    exposure_time = forms.IntegerField(min_value=1,initial=100)
+    exposure_time = forms.IntegerField(min_value=1, initial=100)
     number_of_exposures = forms.IntegerField(initial=5, min_value=1)
     def layout(self):
         return Layout(
@@ -75,27 +73,22 @@ class MMTImagingForm(MMTBaseObservationForm):
 
 
 class MMTMMIRSImagingForm(MMTBaseObservationForm):
+    exposure_time = forms.IntegerField(min_value=1, initial=60)
     filter = forms.ChoiceField(choices=[('J', 'J'), ('H', 'H'), ('K', 'K'), ('Ks', 'Ks')])
     gain = forms.ChoiceField(choices=[
-        ('low', 'low'),
-        ('high', 'high')
-    ],initial='high')
+        ('low', 'low noise'),
+        ('high', 'high dynamic range')
+    ], initial='high')
     read_tab = forms.ChoiceField(choices=[
-        ('ramp_1.475', 'ramp_1.475'),
-        ('ramp_4.426', 'ramp_4.426'),
-        ('fowler', 'fowler')
-    ])
+        ('ramp_1.475', 'ramp 1.475 s'),
+        ('ramp_4.426', 'ramp 4.426 s'),
+        ('fowler', 'Fowler')
+    ], initial='ramp_1.475')
     dither_size = forms.FloatField(min_value=20, initial=30)
-    exposure_time = forms.IntegerField(min_value=1,initial=60,help_text=mark_safe("Different for different filters. More info: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>Eposure Times</a>."))
-    notes = forms.CharField(initial='Imaging of a GW follow-up with expected K ~ {FILL IN} mag. Please use a random 30 x 4 (4 exposures per position) dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers).We do not care about the position angle so adjust as needed for the guide star. For MMIRS Imaging (Y + J-band): This is a rapid TOO request for imaging of a potential GW counterpart with expected J ~ {FILL IN} mag. Please use a random 30 dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers). Please let us know if you have any questions - thanks! For any questions or issues please contact the PI (leave your email or cell number)',widget=forms.Textarea(attrs={'rows':8}),required=False,help_text=mark_safe("Please update the Note template based on the filter you are using. More information about MMIRS observations: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>MMIRS BASICS</a>."))
-
+    number_of_exposures = forms.IntegerField(initial=2, min_value=1)
 
     def layout(self):
         return Layout(
-            HTML('<big>Observation Parameters</big>'),
-            HTML('<p>All the fields are populated by default values. <br>'),
-            HTML('Change the fields according to your need. Add your Name and Contact informaiton in the Notes. <br>'),
-            HTML('<a href="https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit">More Information about MMIRS observations</a>.'),
             Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
             Row(Column('gain'), Column('read_tab'), Column(AppendedText('dither_size', 'arcsec'))),
             Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
@@ -132,10 +125,10 @@ class MMTMMIRSImagingForm(MMTBaseObservationForm):
 
 
 class MMTSpectroscopyForm(MMTBaseObservationForm):
+    exposure_time = forms.IntegerField(min_value=1, initial=900)
     filter = forms.ChoiceField(choices=[('LP3500', 'LP3500'), ('LP3800', 'LP3800')], initial=('LP3800', 'LP3800'))
-    grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)],initial=270)
+    grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)], initial=270)
     central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6500)
-    exposure_time = forms.IntegerField(min_value=1,initial=900)
     number_of_exposures = forms.IntegerField(initial=2, min_value=1)
     slit_width = forms.ChoiceField(choices=[
         ('Longslit0_75', '0.75'),
@@ -143,16 +136,20 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
         ('Longslit1_25', '1.25'),
         ('Longslit1_5', '1.50'),
         ('Longslit5', '5.00'),
-    ],initial='Longslit1')
+    ], initial='Longslit1')
     finder_chart = forms.FileField()
 
     def layout(self):
         return Layout(
-            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
+            Row(
+                Column('magnitude'),
+                Column(AppendedText('exposure_time', 's')),
+                Column(AppendedText('slit_width', 'arcsec'))
+            ),
             Row(
                 Column(AppendedText('grating', 'l/mm')),
                 Column(AppendedText('central_wavelength', 'Å')),
-                Column(AppendedText('slit_width', 'arcsec'))
+                Column('filter')
             ),
             Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
             Row(Column('program')),
@@ -201,17 +198,20 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
 
 
 class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
-    filter = forms.ChoiceField(choices=[('zJ', 'zJ'), ('HK', 'HK')],help_text='If you change filter, remember to change Grism. zJ covers 0.94 to 1.51 microns. HK convers 1.25 to 2.45 microns')
-    grism = forms.ChoiceField(choices=[('J', 'J'), ('HK', 'HK'), ('HK3', 'HK3')],help_text='J for zJ filter and HK/HK3 for HK filter')
+    grism = forms.ChoiceField(choices=[
+        ('J', 'J + zJ (0.94–1.51 μm)'),
+        ('HK', 'HK + HK (1.25–2.49 μm)'),
+        ('HK3', 'HK3 + HK (1.25–2.34 μm)')
+    ], label='Grism + Filter', help_text='HK3 has higher sensitivity but less coverage than HK')
     gain = forms.ChoiceField(choices=[
-        ('low', 'low'),
-        ('high', 'high')
-    ])
+        ('low', 'low noise'),
+        ('high', 'high dynamic range')
+    ], initial='low')
     read_tab = forms.ChoiceField(choices=[
-        ('ramp_1.475', 'ramp_1.475'),
-        ('ramp_4.426', 'ramp_4.426'),
-        ('fowler', 'fowler')
-    ],initial='ramp_4.426')
+        ('ramp_1.475', 'ramp 1.475 s'),
+        ('ramp_4.426', 'ramp 4.426 s'),
+        ('fowler', 'Fowler')
+    ], initial='ramp_4.426')
     dither_size = forms.FloatField(initial=30)
     slit_width = forms.ChoiceField(choices=[
         ('1pixel', '0.2'),
@@ -221,24 +221,19 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
         ('5pixel', '1.0'),
         ('6pixel', '1.2'),
         ('12pixel', '2.4')
-    ],initial='5pixel')
+    ], initial='5pixel')
     finder_chart = forms.FileField()
-    exposure_time = forms.IntegerField(min_value=1,initial=180)
+    exposure_time = forms.IntegerField(min_value=1, initial=180)
     number_of_exposures = forms.IntegerField(initial=4, min_value=1)
-    notes = forms.CharField(initial='Please use a random 30" dither pattern. Please guide for individual exposures. I have put in a dither size of 30" but this just specifies my estimated box size to not lose guiding (not the size of the individual dithers).We do not care about the position angle so adjust as needed for the guide star. Please let us know if you have any questions - thanks! For any questions or issues please contact the PI (leave your email or cell number)',widget=forms.Textarea(attrs={'rows':8}),required=False,help_text=mark_safe(" More information about MMIRS observations: <a href='https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit'>MMIRS BASICS</a>."))
-
 
     def layout(self):
         return Layout(
-            HTML('<big>Observation Parameters</big>'),
-            HTML('<p>All the fields are populated by default values. <br>'),
-            HTML('zJ filter with J grism covers 0.94 to 1.51 microns wavelength range. <br>'),
-            HTML('HK filter with HK3 grism covers 1.25 to 2.45 microns wavelength range.  <br>'),
-            HTML('HK grism if you need wavelenght coverage >2.34 microns but reduced sensitivity. <br>'),
-            HTML('Change the fields according to your need. Add your Name and Contact informaiton in the Notes. <br>'),
-            HTML('<a href="https://docs.google.com/document/d/1-ZKvIQxH7LRqWM5hAyqlVBLhtnncGlCYYHWzkghN-jk/edit">More Information about MMIRS observations</a>.'),
-            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
-            Row(Column('grism'), Column(), Column(AppendedText('slit_width', 'arcsec'))),
+            Row(
+                Column('magnitude'),
+                Column(AppendedText('exposure_time', 's')),
+                Column(AppendedText('slit_width', 'arcsec'))
+            ),
+            Row(Column('grism')),
             Row(Column('gain'), Column('read_tab'), Column(AppendedText('dither_size', 'arcsec'))),
             Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
             Row(Column('program')),
@@ -265,7 +260,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'grism': self.cleaned_data['grism'],
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
-            'filter': self.cleaned_data['filter'],
+            'filter': 'J' if self.cleaned_data['grism'] == 'zJ' else 'HK',
             'visits': self.cleaned_data['visits'],
             'exposuretime': self.cleaned_data['exposure_time'],
             'numberexposures': self.cleaned_data['number_of_exposures'],
@@ -281,7 +276,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
         parameters = super().serialize_parameters()
         parameters['finder_chart'] = parameters['finder_chart'].name
         return parameters
-    
+
 
 class MMTFacility(BaseRoboticObservationFacility):
     name = 'MMT'
