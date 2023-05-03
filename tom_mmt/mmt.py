@@ -15,9 +15,7 @@ import re
 class MMTBaseObservationForm(BaseRoboticObservationForm):
     magnitude = forms.FloatField()
     visits = forms.IntegerField(initial=1, min_value=1)
-    exposure_time = forms.IntegerField(min_value=1)
-    number_of_exposures = forms.IntegerField(initial=2, min_value=1)
-    notes = forms.CharField(max_length=100, required=False)
+    notes = forms.CharField(widget=forms.Textarea(attrs={'rows':8}), required=False)
     priority = forms.ChoiceField(choices=[
         (3, 'low'),
         (2, 'medium'),
@@ -38,7 +36,8 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
 
 class MMTImagingForm(MMTBaseObservationForm):
     filter = forms.ChoiceField(choices=[('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
-
+    exposure_time = forms.IntegerField(min_value=1, initial=100)
+    number_of_exposures = forms.IntegerField(initial=5, min_value=1)
     def layout(self):
         return Layout(
             Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
@@ -73,17 +72,19 @@ class MMTImagingForm(MMTBaseObservationForm):
 
 
 class MMTMMIRSImagingForm(MMTBaseObservationForm):
+    exposure_time = forms.IntegerField(min_value=1, initial=60)
     filter = forms.ChoiceField(choices=[('J', 'J'), ('H', 'H'), ('K', 'K'), ('Ks', 'Ks')])
     gain = forms.ChoiceField(choices=[
-        ('low', 'low'),
-        ('high', 'high')
-    ])
+        ('low', 'low noise'),
+        ('high', 'high dynamic range')
+    ], initial='high')
     read_tab = forms.ChoiceField(choices=[
-        ('ramp_1.475', 'ramp_1.475'),
-        ('ramp_4.426', 'ramp_4.426'),
-        ('fowler', 'fowler')
-    ])
+        ('ramp_1.475', 'ramp 1.475 s'),
+        ('ramp_4.426', 'ramp 4.426 s'),
+        ('fowler', 'Fowler')
+    ], initial='ramp_1.475')
     dither_size = forms.FloatField(min_value=20, initial=30)
+    number_of_exposures = forms.IntegerField(initial=2, min_value=1)
 
     def layout(self):
         return Layout(
@@ -123,25 +124,31 @@ class MMTMMIRSImagingForm(MMTBaseObservationForm):
 
 
 class MMTSpectroscopyForm(MMTBaseObservationForm):
+    exposure_time = forms.IntegerField(min_value=1, initial=900)
     filter = forms.ChoiceField(choices=[('LP3500', 'LP3500'), ('LP3800', 'LP3800')], initial=('LP3800', 'LP3800'))
-    grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)])
-    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=7380)
+    grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)], initial=270)
+    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6500)
+    number_of_exposures = forms.IntegerField(initial=2, min_value=1)
     slit_width = forms.ChoiceField(choices=[
         ('Longslit0_75', '0.75'),
         ('Longslit1', '1.00'),
         ('Longslit1_25', '1.25'),
         ('Longslit1_5', '1.50'),
         ('Longslit5', '5.00'),
-    ])
+    ], initial='Longslit1')
     finder_chart = forms.FileField()
 
     def layout(self):
         return Layout(
-            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
+            Row(
+                Column('magnitude'),
+                Column(AppendedText('exposure_time', 's')),
+                Column(AppendedText('slit_width', 'arcsec'))
+            ),
             Row(
                 Column(AppendedText('grating', 'l/mm')),
                 Column(AppendedText('central_wavelength', 'Å')),
-                Column(AppendedText('slit_width', 'arcsec'))
+                Column('filter')
             ),
             Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
             Row(Column('program')),
@@ -190,17 +197,20 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
 
 
 class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
-    filter = forms.ChoiceField(choices=[('zJ', 'zJ'), ('HK', 'HK')])
-    grism = forms.ChoiceField(choices=[('J', 'J'), ('HK', 'HK'), ('HK3', 'HK3')])
+    grism = forms.ChoiceField(choices=[
+        ('J', 'J + zJ (0.94–1.51 μm)'),
+        ('HK', 'HK + HK (1.25–2.49 μm)'),
+        ('HK3', 'HK3 + HK (1.25–2.34 μm)')
+    ], label='Grism + Filter', help_text='HK3 has higher sensitivity but less coverage than HK')
     gain = forms.ChoiceField(choices=[
-        ('low', 'low'),
-        ('high', 'high')
-    ])
+        ('low', 'low noise'),
+        ('high', 'high dynamic range')
+    ], initial='low')
     read_tab = forms.ChoiceField(choices=[
-        ('ramp_1.475', 'ramp_1.475'),
-        ('ramp_4.426', 'ramp_4.426'),
-        ('fowler', 'fowler')
-    ])
+        ('ramp_1.475', 'ramp 1.475 s'),
+        ('ramp_4.426', 'ramp 4.426 s'),
+        ('fowler', 'Fowler')
+    ], initial='ramp_4.426')
     dither_size = forms.FloatField(initial=30)
     slit_width = forms.ChoiceField(choices=[
         ('1pixel', '0.2'),
@@ -210,13 +220,19 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
         ('5pixel', '1.0'),
         ('6pixel', '1.2'),
         ('12pixel', '2.4')
-    ])
+    ], initial='5pixel')
     finder_chart = forms.FileField()
+    exposure_time = forms.IntegerField(min_value=1, initial=180)
+    number_of_exposures = forms.IntegerField(initial=4, min_value=1)
 
     def layout(self):
         return Layout(
-            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
-            Row(Column('grism'), Column(), Column(AppendedText('slit_width', 'arcsec'))),
+            Row(
+                Column('magnitude'),
+                Column(AppendedText('exposure_time', 's')),
+                Column(AppendedText('slit_width', 'arcsec'))
+            ),
+            Row(Column('grism')),
             Row(Column('gain'), Column('read_tab'), Column(AppendedText('dither_size', 'arcsec'))),
             Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
             Row(Column('program')),
@@ -243,7 +259,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'grism': self.cleaned_data['grism'],
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
-            'filter': self.cleaned_data['filter'],
+            'filter': 'J' if self.cleaned_data['grism'] == 'zJ' else 'HK',
             'visits': self.cleaned_data['visits'],
             'exposuretime': self.cleaned_data['exposure_time'],
             'numberexposures': self.cleaned_data['number_of_exposures'],
