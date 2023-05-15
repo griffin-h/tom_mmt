@@ -259,7 +259,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'grism': 'J' if self.cleaned_data['filter'] == 'zJ' else 'HK',,
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
-            'filter': self.cleaned_data['visit'],
+            'filter': self.cleaned_data['filter'],
             'visits': self.cleaned_data['visits'],
             'exposuretime': self.cleaned_data['exposure_time'],
             'numberexposures': self.cleaned_data['number_of_exposures'],
