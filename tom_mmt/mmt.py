@@ -198,7 +198,7 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
 
 class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
     grism = forms.ChoiceField(choices=[
-        ('J', 'J + zJ (0.94–1.51 μm)'),
+        ('zJ', 'J + zJ (0.94–1.51 μm)'),
         ('HK', 'HK + HK (1.25–2.49 μm)'),
         ('HK3', 'HK3 + HK (1.25–2.34 μm)')
     ], label='Grism + Filter', help_text='HK3 has higher sensitivity but less coverage than HK')
@@ -256,10 +256,10 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'gain': self.cleaned_data['gain'],
             'ReadTab': self.cleaned_data['read_tab'],
             'DitherSize': self.cleaned_data['dither_size'],
-            'grism': self.cleaned_data['grism'],
+            'grism': 'J' if self.cleaned_data['filter'] == 'zJ' else 'HK',,
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
-            'filter': 'J' if self.cleaned_data['grism'] == 'zJ' else 'HK',
+            'filter': self.cleaned_data['filter'],
             'visits': self.cleaned_data['visits'],
             'exposuretime': self.cleaned_data['exposure_time'],
             'numberexposures': self.cleaned_data['number_of_exposures'],
