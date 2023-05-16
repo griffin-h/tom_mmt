@@ -256,7 +256,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'gain': self.cleaned_data['gain'],
             'ReadTab': self.cleaned_data['read_tab'],
             'DitherSize': self.cleaned_data['dither_size'],
-            'grism': 'J' if self.cleaned_data['filter'] == 'zJ' else 'HK',,
+            'grism': 'J' if self.cleaned_data['filter'] == 'zJ' else 'HK',
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
             'filter': self.cleaned_data['filter'],
