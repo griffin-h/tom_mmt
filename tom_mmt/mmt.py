@@ -198,9 +198,9 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
 
 class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
     grism = forms.ChoiceField(choices=[
-        ('zJ', 'J + zJ (0.94–1.51 μm)'),
-        ('HK', 'HK + HK (1.25–2.49 μm)'),
-        ('HK3', 'HK3 + HK (1.25–2.34 μm)')
+        ('J+zJ', 'J + zJ (0.94–1.51 μm)'),
+        ('HK+HK', 'HK + HK (1.25–2.49 μm)'),
+        ('HK3+HK', 'HK3 + HK (1.25–2.34 μm)')
     ], label='Grism + Filter', help_text='HK3 has higher sensitivity but less coverage than HK')
     gain = forms.ChoiceField(choices=[
         ('low', 'low noise'),
@@ -243,7 +243,7 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
     def observation_payload(self):
         target = Target.objects.get(pk=self.cleaned_data['target_id'])
         ra, dec = SkyCoord(target.ra, target.dec, unit='deg').to_string('hmsdms', sep=':', precision=1).split()
-
+        grism, filter = self.cleaned_data['grism'].split('+')
         payload = {
             'observationtype': 'longslit',
             'objectid': re.sub('[^a-zA-Z0-9]', '', target.name),  # only alphanumeric characters allowed
@@ -256,10 +256,10 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
             'gain': self.cleaned_data['gain'],
             'ReadTab': self.cleaned_data['read_tab'],
             'DitherSize': self.cleaned_data['dither_size'],
-            'grism': 'J' if self.cleaned_data['filter'] == 'zJ' else 'HK',
+            'grism': grism,
             'slitwidth': self.cleaned_data['slit_width'],
             'maskid': 111,
-            'filter': self.cleaned_data['filter'],
+            'filter': filter,
             'visits': self.cleaned_data['visits'],
             'exposuretime': self.cleaned_data['exposure_time'],
             'numberexposures': self.cleaned_data['number_of_exposures'],
