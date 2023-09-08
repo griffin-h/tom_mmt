@@ -21,7 +21,6 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
         (2, 'medium'),
         (1, 'high'),
     ], initial=(3, 'low'))
-    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs'])
     target_of_opportunity = forms.BooleanField(initial=True)
 
     def is_valid(self):
@@ -34,10 +33,19 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
         return super().is_valid()
 
 
-class MMTImagingForm(MMTBaseObservationForm):
+class MMTBinospecObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['Binospec'])
+
+
+class MMTMMIRSObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
+
+
+class MMTBinospecImagingForm(MMTBinospecObservationForm):
     filter = forms.ChoiceField(choices=[('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
     exposure_time = forms.IntegerField(min_value=1, initial=100)
     number_of_exposures = forms.IntegerField(initial=5, min_value=1)
+
     def layout(self):
         return Layout(
             Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
@@ -71,7 +79,7 @@ class MMTImagingForm(MMTBaseObservationForm):
         return payload
 
 
-class MMTMMIRSImagingForm(MMTBaseObservationForm):
+class MMTMMIRSImagingForm(MMTMMIRSObservationForm):
     exposure_time = forms.IntegerField(min_value=1, initial=60)
     filter = forms.ChoiceField(choices=[('J', 'J'), ('H', 'H'), ('K', 'K'), ('Ks', 'Ks')])
     gain = forms.ChoiceField(choices=[
@@ -123,7 +131,7 @@ class MMTMMIRSImagingForm(MMTBaseObservationForm):
         return payload
 
 
-class MMTSpectroscopyForm(MMTBaseObservationForm):
+class MMTBinospecSpectroscopyForm(MMTBinospecObservationForm):
     exposure_time = forms.IntegerField(min_value=1, initial=900)
     filter = forms.ChoiceField(choices=[('LP3500', 'LP3500'), ('LP3800', 'LP3800')], initial=('LP3800', 'LP3800'))
     grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)], initial=270)
@@ -196,7 +204,7 @@ class MMTSpectroscopyForm(MMTBaseObservationForm):
         return parameters
 
 
-class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
+class MMTMMIRSSpectroscopyForm(MMTMMIRSObservationForm):
     grism = forms.ChoiceField(choices=[
         ('J+zJ', 'J + zJ (0.94–1.51 μm)'),
         ('HK+HK', 'HK + HK (1.25–2.49 μm)'),
@@ -280,9 +288,9 @@ class MMTMMIRSSpectroscopyForm(MMTBaseObservationForm):
 class MMTFacility(BaseRoboticObservationFacility):
     name = 'MMT'
     observation_forms = {
-        'BINOSPEC_IMAGING': MMTImagingForm,
+        'BINOSPEC_IMAGING': MMTBinospecImagingForm,
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
-        'BINOSPEC_SPECTROSCOPY': MMTSpectroscopyForm,
+        'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
         'MMIRS_SPECTROSCOPY': MMTMMIRSSpectroscopyForm,
     }
     SITES = {
