@@ -28,7 +28,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'tomtoolkit',
-        'mmtapi',
+        'pymmt',
     ],
     include_package_data=True,
 )

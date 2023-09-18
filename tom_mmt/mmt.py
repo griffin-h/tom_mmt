@@ -5,7 +5,7 @@ from astropy.coordinates import SkyCoord
 from django import forms
 from crispy_forms.layout import Layout, Row, Column
 from crispy_forms.bootstrap import AppendedText
-from mmtapi import mmtapi
+import pymmt
 from django.conf import settings
 import requests
 from datetime import datetime
@@ -304,14 +304,14 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def data_products(self, observation_id, product_id=None):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        datalist = mmtapi.Datalist(token=token)
+        datalist = pymmt.Datalist(token=token)
         datalist.get(targetid=observation_id, data_type='reduced')
 
         # flatten the dictionary structure across all data sets
         data_products = []
         for datalist in datalist.data:
             for file_info in datalist['datafiles']:
-                image = mmtapi.Image(token=token)
+                image = pymmt.Image(token=token)
                 image._build_url({'datafileid': file_info['id'], 'token': token})
                 file_info['url'] = image.url
                 if product_id is None or file_info['id'] == int(product_id):  # None means get all of them
@@ -324,7 +324,7 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def get_observation_status(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        target = mmtapi.Target(token=token, payload={'targetid': observation_id})
+        target = pymmt.Target(token=token, payload={'targetid': observation_id})
         if not target.request.ok:
             status = 'UNKNOWN'
         elif target.disabled:
@@ -338,14 +338,14 @@ class MMTFacility(BaseRoboticObservationFacility):
         return {'state': status, 'scheduled_start': None, 'scheduled_end': None}
 
     def submit_observation(self, observation_payload):
-        target = mmtapi.Target(token=observation_payload['program'], payload=observation_payload)
+        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload)
         target.post()
         target.upload_finder(observation_payload['finder_chart'])
         return [target.id]
 
     def validate_observation(self, observation_payload):
         # Target.validate is automatically called by Target.__init__
-        target = mmtapi.Target(token=observation_payload['program'], payload=observation_payload)
+        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload)
         return target.message['Errors']
 
     def get_terminal_observing_states(self):
@@ -356,7 +356,7 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def cancel_observation(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        target = mmtapi.Target(token=token, payload={'targetid': observation_id})
+        target = pymmt.Target(token=token, payload={'targetid': observation_id})
         target.delete()
 
     def get_observation_url(self, observation_id):
@@ -365,7 +365,7 @@ class MMTFacility(BaseRoboticObservationFacility):
         return f"https://scheduler.mmto.arizona.edu/catalog.php?token={token}"
 
     def get_facility_status(self):
-        queues = mmtapi.Instruments().get_instruments()
+        queues = pymmt.Instruments().get_instruments()
         if queues:
             status = queues[0].get('name', 'UNKNOWN')
         else:
