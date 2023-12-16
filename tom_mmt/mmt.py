@@ -436,21 +436,20 @@ class MMTDataProcessor(DataProcessor):
     def process_data(self, data_product):
         mimetype = mimetypes.guess_type(data_product.data.path)[0]
         if mimetype == 'application/x-tar':
+            logger.info('Untarring MMT file: {}'.format(data_product.data))
             with TarFile(fileobj=data_product.data) as tarfile:
                 for member in tarfile.getmembers():
                     if member.name.endswith('_B.fits'):
                         fitsfile = tarfile.extractfile(member)
                         fitsname = os.path.basename(member.name)
-                        logger.info('Untarring MMT file: {}'.format(data_product.data))
-
-                        file = ContentFile(fitsfile.read(), fitsname)
-                        data_product, created = DataProduct.objects.get_or_create(
+                        dp, created = DataProduct.objects.get_or_create(
                             product_id=member.name,
                             target=data_product.target,
                             observation_record=data_product.observation_record,
-                            data=file,
+                            data=ContentFile(fitsfile.read(), fitsname),
                             data_product_type='spectroscopy',
                         )
-                        logger.info('Saved new dataproduct: {}'.format(data_product.data))
-                        break
-        return run_data_processor(data_product)
+                        logger.info('Saved new dataproduct: {}'.format(dp.data))
+                        return run_data_processor(dp)
+        else:
+            return []
