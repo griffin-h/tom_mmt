@@ -335,7 +335,7 @@ class MMTFacility(BaseRoboticObservationFacility):
                 product_id=product['id'],
                 target=observation_record.target,
                 observation_record=observation_record,
-                data_product_type=product['type'],  # same as the built-in method except for this line
+                data_product_type='MMT',  # same as the built-in method except for this line
             )
             if created:
                 product_data = requests.get(product['url']).content
