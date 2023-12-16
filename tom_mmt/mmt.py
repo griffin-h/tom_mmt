@@ -17,6 +17,9 @@ import re
 import mimetypes
 from tarfile import TarFile
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
@@ -438,14 +441,16 @@ class MMTDataProcessor(DataProcessor):
                     if member.name.endswith('_B.fits'):
                         fitsfile = tarfile.extractfile(member)
                         fitsname = os.path.basename(member.name)
-                        break
+                        logger.info('Untarring MMT file: {}'.format(data_product.data))
 
-            file = ContentFile(fitsfile.read(), fitsname)
-            data_product, created = DataProduct.objects.get_or_create(
-                product_id=member.name,
-                target=data_product.target,
-                observation_record=data_product.observation_record,
-                data=file,
-                data_product_type='spectroscopy',
-            )
+                        file = ContentFile(fitsfile.read(), fitsname)
+                        data_product, created = DataProduct.objects.get_or_create(
+                            product_id=member.name,
+                            target=data_product.target,
+                            observation_record=data_product.observation_record,
+                            data=file,
+                            data_product_type='spectroscopy',
+                        )
+                        logger.info('Saved new dataproduct: {}'.format(data_product.data))
+                        break
         return run_data_processor(data_product)
