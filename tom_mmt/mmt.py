@@ -451,6 +451,5 @@ class MMTDataProcessor(DataProcessor):
                             data_product_type='spectroscopy',
                         )
                         logger.info('Saved new dataproduct: {}'.format(dp.data))
-                        return run_data_processor(dp)
-        else:
-            return []
+                        run_data_processor(dp)
+        return []
