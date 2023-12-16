@@ -346,6 +346,7 @@ class MMTFacility(BaseRoboticObservationFacility):
                 dp.data.save(product['filename'], dfile)
                 dp.save()
                 logger.info('Saved new dataproduct: {}'.format(dp.data))
+                run_data_processor(dp)
             if settings.AUTO_THUMBNAILS:
                 create_image_dataproduct(dp)
                 dp.get_preview()
