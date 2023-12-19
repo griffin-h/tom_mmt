@@ -1,8 +1,12 @@
 from tom_observations.facility import BaseRoboticObservationForm, BaseRoboticObservationFacility
 from tom_observations.models import ObservationRecord
+from tom_dataproducts.data_processor import run_data_processor, DataProcessor
+from tom_dataproducts.models import DataProduct
+from tom_dataproducts.utils import create_image_dataproduct
 from tom_targets.models import Target
 from astropy.coordinates import SkyCoord
 from django import forms
+from django.core.files.base import ContentFile
 from crispy_forms.layout import Layout, Row, Column
 from crispy_forms.bootstrap import AppendedText
 import pymmt
@@ -10,6 +14,12 @@ from django.conf import settings
 import requests
 from datetime import datetime
 import re
+import mimetypes
+from tarfile import TarFile
+import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
@@ -319,6 +329,30 @@ class MMTFacility(BaseRoboticObservationFacility):
 
         return data_products
 
+    def save_data_products(self, observation_record, product_id=None):
+        final_products = []
+        products = self.data_products(observation_record.observation_id, product_id)
+
+        for product in products:
+            dp, created = DataProduct.objects.get_or_create(
+                product_id=product['id'],
+                target=observation_record.target,
+                observation_record=observation_record,
+                data_product_type='MMT',  # same as the built-in method except for this line
+            )
+            if created:
+                product_data = requests.get(product['url']).content
+                dfile = ContentFile(product_data)
+                dp.data.save(product['filename'], dfile)
+                dp.save()
+                logger.info('Saved new dataproduct: {}'.format(dp.data))
+                run_data_processor(dp)
+            if settings.AUTO_THUMBNAILS:
+                create_image_dataproduct(dp)
+                dp.get_preview()
+            final_products.append(dp)
+        return final_products
+
     def get_form(self, observation_type):
         return self.observation_forms.get(observation_type, MMTBaseObservationForm)
 
@@ -397,3 +431,25 @@ class MMTFacility(BaseRoboticObservationFacility):
     def get_facility_weather_urls(self):
         return {'code': 'MMT', 'sites': [{'code': 'flwo',
                                           'weather_url': 'https://www.mmto.org/current-weather-at-the-mmt/'}]}
+
+
+class MMTDataProcessor(DataProcessor):
+    def process_data(self, data_product):
+        mimetype = mimetypes.guess_type(data_product.data.path)[0]
+        if mimetype == 'application/x-tar':
+            logger.info('Untarring MMT file: {}'.format(data_product.data))
+            with TarFile(fileobj=data_product.data) as tarfile:
+                for member in tarfile.getmembers():
+                    if member.name.endswith('_B.fits'):
+                        fitsfile = tarfile.extractfile(member)
+                        fitsname = os.path.basename(member.name)
+                        dp, created = DataProduct.objects.get_or_create(
+                            product_id=member.name,
+                            target=data_product.target,
+                            observation_record=data_product.observation_record,
+                            data=ContentFile(fitsfile.read(), fitsname),
+                            data_product_type='spectroscopy',
+                        )
+                        logger.info('Saved new dataproduct: {}'.format(dp.data))
+                        run_data_processor(dp)
+        return []

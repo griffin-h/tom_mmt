@@ -40,3 +40,17 @@ FACILITIES = {
 }
 ```
 Keep in mind that Binospec and MMIRS programs have separate API keys even if they are part of the same proposal.
+
+If you want to be able to retrieve and ingest spectra from the MMT API, you need to configure your TOM to use the custom MMT data processor. Add the `'MMT'` line to the bottom of your `DATA_PRODUCT_TYPES` and `DATA_PROCESSORS` in `settings.py`:
+
+```python
+DATA_PRODUCT_TYPES = {
+    ...
+    'MMT': ('MMT', 'MMT File'),
+}
+
+DATA_PROCESSORS = {
+    ...
+    'MMT': 'tom_mmt.mmt.MMTDataProcessor',
+}
+```
