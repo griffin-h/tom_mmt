@@ -30,7 +30,7 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
         (3, 'low'),
         (2, 'medium'),
         (1, 'high'),
-    ], initial=(1, 'low'))
+    ], initial=(1, 'high'))
     target_of_opportunity = forms.BooleanField(initial=True)
 
     def is_valid(self):
