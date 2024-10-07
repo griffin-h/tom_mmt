@@ -30,7 +30,7 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
         (3, 'low'),
         (2, 'medium'),
         (1, 'high'),
-    ], initial=(3, 'low'))
+    ], initial=(1, 'high'))
     target_of_opportunity = forms.BooleanField(initial=True)
 
     def is_valid(self):
@@ -145,7 +145,7 @@ class MMTBinospecSpectroscopyForm(MMTBinospecObservationForm):
     exposure_time = forms.IntegerField(min_value=1, initial=900)
     filter = forms.ChoiceField(choices=[('LP3500', 'LP3500'), ('LP3800', 'LP3800')], initial=('LP3800', 'LP3800'))
     grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)], initial=270)
-    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6500)
+    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6800)
     number_of_exposures = forms.IntegerField(initial=2, min_value=1)
     slit_width = forms.ChoiceField(choices=[
         ('Longslit0_75', '0.75'),
