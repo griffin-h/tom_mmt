@@ -20,7 +20,7 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
         (3, 'low'),
         (2, 'medium'),
         (1, 'high'),
-    ], initial=(3, 'low'))
+    ], initial=(1, 'high'))
     target_of_opportunity = forms.BooleanField(initial=True)
 
     def is_valid(self):
@@ -330,7 +330,7 @@ class MMTFacility(BaseRoboticObservationFacility):
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
         'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
         'MMIRS_SPECTROSCOPY': MMTMMIRSSpectroscopyForm,
-        'MMMTCam_IMAGING': MMTCamImagingForm,
+        'MMTCam_IMAGING': MMTCamImagingForm,
     }
     SITES = {
         'F. L. Whipple': {

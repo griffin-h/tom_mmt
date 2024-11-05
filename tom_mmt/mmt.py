@@ -1,12 +1,8 @@
 from tom_observations.facility import BaseRoboticObservationForm, BaseRoboticObservationFacility
 from tom_observations.models import ObservationRecord
-from tom_dataproducts.data_processor import run_data_processor, DataProcessor
-from tom_dataproducts.models import DataProduct
-from tom_dataproducts.utils import create_image_dataproduct
 from tom_targets.models import Target
 from astropy.coordinates import SkyCoord
 from django import forms
-from django.core.files.base import ContentFile
 from crispy_forms.layout import Layout, Row, Column
 from crispy_forms.bootstrap import AppendedText
 import pymmt
@@ -14,12 +10,6 @@ from django.conf import settings
 import requests
 from datetime import datetime
 import re
-import mimetypes
-from tarfile import TarFile
-import os
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
@@ -50,6 +40,8 @@ class MMTBinospecObservationForm(MMTBaseObservationForm):
 class MMTMMIRSObservationForm(MMTBaseObservationForm):
     program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
 
+class MMTCamObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMTCam'])
 
 class MMTBinospecImagingForm(MMTBinospecObservationForm):
     filter = forms.ChoiceField(choices=[('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
@@ -75,6 +67,42 @@ class MMTBinospecImagingForm(MMTBinospecObservationForm):
             'dec': dec,
             'epoch': 'J2000',
             'instrumentid': 16,
+            'magnitude': self.cleaned_data['magnitude'],
+            'maskid': 110,
+            'filter': self.cleaned_data['filter'],
+            'visits': self.cleaned_data['visits'],
+            'exposuretime': self.cleaned_data['exposure_time'],
+            'numberexposures': self.cleaned_data['number_of_exposures'],
+            'priority': self.cleaned_data['priority'],
+            'program': self.cleaned_data['program'],
+            'notes': self.cleaned_data['notes'],
+            'targetofopportunity': self.cleaned_data['target_of_opportunity'],
+        }
+        return payload
+
+class MMTCamImagingForm(MMTCamObservationForm):
+    filter = forms.ChoiceField(choices=[('u','u'),('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
+    exposure_time = forms.IntegerField(min_value=1, initial=100)
+    number_of_exposures = forms.IntegerField(initial=5, min_value=1)
+    def layout(self):
+        return Layout(
+            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
+            Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
+            Row(Column('program')),
+            Row(Column('target_of_opportunity')),
+            Row(Column('notes')),
+        )
+
+    def observation_payload(self):
+        target = Target.objects.get(pk=self.cleaned_data['target_id'])
+        ra, dec = SkyCoord(target.ra, target.dec, unit='deg').to_string('hmsdms', sep=':', precision=1).split()
+        payload = {
+            'observationtype': 'imaging',
+            'objectid': re.sub('[^a-zA-Z0-9]', '', target.name),  # only alphanumeric characters allowed
+            'ra': ra,
+            'dec': dec,
+            'epoch': 'J2000',
+            'instrumentid': 6,
             'magnitude': self.cleaned_data['magnitude'],
             'maskid': 110,
             'filter': self.cleaned_data['filter'],
@@ -145,7 +173,7 @@ class MMTBinospecSpectroscopyForm(MMTBinospecObservationForm):
     exposure_time = forms.IntegerField(min_value=1, initial=900)
     filter = forms.ChoiceField(choices=[('LP3500', 'LP3500'), ('LP3800', 'LP3800')], initial=('LP3800', 'LP3800'))
     grating = forms.ChoiceField(choices=[(270, 270), (600, 600), (1000, 1000)], initial=270)
-    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6800)
+    central_wavelength = forms.FloatField(min_value=4108, max_value=9279, initial=6500)
     number_of_exposures = forms.IntegerField(initial=2, min_value=1)
     slit_width = forms.ChoiceField(choices=[
         ('Longslit0_75', '0.75'),
@@ -302,6 +330,7 @@ class MMTFacility(BaseRoboticObservationFacility):
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
         'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
         'MMIRS_SPECTROSCOPY': MMTMMIRSSpectroscopyForm,
+        'MMTCam_IMAGING': MMTCamImagingForm,
     }
     SITES = {
         'F. L. Whipple': {
@@ -328,30 +357,6 @@ class MMTFacility(BaseRoboticObservationFacility):
                     data_products.append(file_info)
 
         return data_products
-
-    def save_data_products(self, observation_record, product_id=None):
-        final_products = []
-        products = self.data_products(observation_record.observation_id, product_id)
-
-        for product in products:
-            dp, created = DataProduct.objects.get_or_create(
-                product_id=product['id'],
-                target=observation_record.target,
-                observation_record=observation_record,
-                data_product_type='MMT',  # same as the built-in method except for this line
-            )
-            if created:
-                product_data = requests.get(product['url']).content
-                dfile = ContentFile(product_data)
-                dp.data.save(product['filename'], dfile)
-                dp.save()
-                logger.info('Saved new dataproduct: {}'.format(dp.data))
-                run_data_processor(dp)
-            if settings.AUTO_THUMBNAILS:
-                create_image_dataproduct(dp)
-                dp.get_preview()
-            final_products.append(dp)
-        return final_products
 
     def get_form(self, observation_type):
         return self.observation_forms.get(observation_type, MMTBaseObservationForm)
@@ -431,25 +436,3 @@ class MMTFacility(BaseRoboticObservationFacility):
     def get_facility_weather_urls(self):
         return {'code': 'MMT', 'sites': [{'code': 'flwo',
                                           'weather_url': 'https://www.mmto.org/current-weather-at-the-mmt/'}]}
-
-
-class MMTDataProcessor(DataProcessor):
-    def process_data(self, data_product):
-        mimetype = mimetypes.guess_type(data_product.data.path)[0]
-        if mimetype == 'application/x-tar':
-            logger.info('Untarring MMT file: {}'.format(data_product.data))
-            with TarFile(fileobj=data_product.data) as tarfile:
-                for member in tarfile.getmembers():
-                    if member.name.endswith('_B.fits'):
-                        fitsfile = tarfile.extractfile(member)
-                        fitsname = os.path.basename(member.name)
-                        dp, created = DataProduct.objects.get_or_create(
-                            product_id=member.name,
-                            target=data_product.target,
-                            observation_record=data_product.observation_record,
-                            data=ContentFile(fitsfile.read(), fitsname),
-                            data_product_type='spectroscopy',
-                        )
-                        logger.info('Saved new dataproduct: {}'.format(dp.data))
-                        run_data_processor(dp)
-        return []
