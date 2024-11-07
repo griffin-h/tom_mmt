@@ -42,6 +42,8 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
             self.add_error(None, errors)
         return super().is_valid()
 
+class MMTCamObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMTCam'])
 
 class MMTBinospecObservationForm(MMTBaseObservationForm):
     program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['Binospec'])
@@ -49,6 +51,43 @@ class MMTBinospecObservationForm(MMTBaseObservationForm):
 
 class MMTMMIRSObservationForm(MMTBaseObservationForm):
     program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
+
+
+class MMTCamImagingForm(MMTCamObservationForm):
+    filter = forms.ChoiceField(choices=[('u','u'),('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
+    exposure_time = forms.IntegerField(min_value=1, initial=100)
+    number_of_exposures = forms.IntegerField(initial=5, min_value=1)
+    def layout(self):
+        return Layout(
+            Row(Column('magnitude'), Column(AppendedText('exposure_time', 's')), Column('filter')),
+            Row(Column('visits'), Column('number_of_exposures'), Column('priority')),
+            Row(Column('program')),
+            Row(Column('target_of_opportunity')),
+            Row(Column('notes')),
+        )
+
+    def observation_payload(self):
+        target = Target.objects.get(pk=self.cleaned_data['target_id'])
+        ra, dec = SkyCoord(target.ra, target.dec, unit='deg').to_string('hmsdms', sep=':', precision=1).split()
+        payload = {
+            'observationtype': 'imaging',
+            'objectid': re.sub('[^a-zA-Z0-9]', '', target.name),  # only alphanumeric characters allowed
+            'ra': ra,
+            'dec': dec,
+            'epoch': 'J2000',
+            'instrumentid': 6,
+            'magnitude': self.cleaned_data['magnitude'],
+            'maskid': 110,
+            'filter': self.cleaned_data['filter'],
+            'visits': self.cleaned_data['visits'],
+            'exposuretime': self.cleaned_data['exposure_time'],
+            'numberexposures': self.cleaned_data['number_of_exposures'],
+            'priority': self.cleaned_data['priority'],
+            'program': self.cleaned_data['program'],
+            'notes': self.cleaned_data['notes'],
+            'targetofopportunity': self.cleaned_data['target_of_opportunity'],
+        }
+        return payload
 
 
 class MMTBinospecImagingForm(MMTBinospecObservationForm):
@@ -298,6 +337,7 @@ class MMTMMIRSSpectroscopyForm(MMTMMIRSObservationForm):
 class MMTFacility(BaseRoboticObservationFacility):
     name = 'MMT'
     observation_forms = {
+        'MMTCam_IMAGING': MMTCamImagingForm,
         'BINOSPEC_IMAGING': MMTBinospecImagingForm,
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
         'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
