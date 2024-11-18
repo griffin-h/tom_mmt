@@ -335,7 +335,7 @@ class MMTMMIRSSpectroscopyForm(MMTMMIRSObservationForm):
 class MMTFacility(BaseRoboticObservationFacility):
     name = 'MMT'
     observation_forms = {
-        'MMTCam_IMAGING': MMTCamObservationForm,
+        'MMTCam': MMTCamObservationForm,
         'BINOSPEC_IMAGING': MMTBinospecImagingForm,
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
         'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
