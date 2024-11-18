@@ -44,16 +44,6 @@ class MMTBaseObservationForm(BaseRoboticObservationForm):
 
 class MMTCamObservationForm(MMTBaseObservationForm):
     program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMTCam'])
-
-class MMTBinospecObservationForm(MMTBaseObservationForm):
-    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['Binospec'])
-
-
-class MMTMMIRSObservationForm(MMTBaseObservationForm):
-    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
-
-
-class MMTCamImagingForm(MMTCamObservationForm):
     filter = forms.ChoiceField(choices=[('u','u'),('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
     exposure_time = forms.IntegerField(min_value=1, initial=100)
     number_of_exposures = forms.IntegerField(initial=5, min_value=1)
@@ -88,6 +78,16 @@ class MMTCamImagingForm(MMTCamObservationForm):
             'targetofopportunity': self.cleaned_data['target_of_opportunity'],
         }
         return payload
+
+
+class MMTBinospecObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['Binospec'])
+
+
+class MMTMMIRSObservationForm(MMTBaseObservationForm):
+    program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
+
+
 
 
 class MMTBinospecImagingForm(MMTBinospecObservationForm):
@@ -337,7 +337,7 @@ class MMTMMIRSSpectroscopyForm(MMTMMIRSObservationForm):
 class MMTFacility(BaseRoboticObservationFacility):
     name = 'MMT'
     observation_forms = {
-        'MMTCam_IMAGING': MMTCamImagingForm,
+        'MMTCam_IMAGING': MMTCamObservationForm,
         'BINOSPEC_IMAGING': MMTBinospecImagingForm,
         'MMIRS_IMAGING': MMTMMIRSImagingForm,
         'BINOSPEC_SPECTROSCOPY': MMTBinospecSpectroscopyForm,
