@@ -35,7 +35,7 @@ FACILITIES = {
                 ('1notherverylong6exadecimalstring', 'The Name of Another Program'),
                 ...
             ],
-            'MMTCamImaging': [
+            'MMTCam': [
                 ('3hirty2wocharacterapitoken4ormmt', 'Human-Readable Program Name'),
                 ('1notherverylong6exadecimalstring', 'The Name of Another Program'),
                 ...
