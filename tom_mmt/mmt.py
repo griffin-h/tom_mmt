@@ -88,8 +88,6 @@ class MMTMMIRSObservationForm(MMTBaseObservationForm):
     program = forms.ChoiceField(choices=settings.FACILITIES['MMT']['programs']['MMIRS'])
 
 
-
-
 class MMTBinospecImagingForm(MMTBinospecObservationForm):
     filter = forms.ChoiceField(choices=[('g', 'g'), ('r', 'r'), ('i', 'i'), ('z', 'z')])
     exposure_time = forms.IntegerField(min_value=1, initial=100)
