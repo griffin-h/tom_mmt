@@ -437,23 +437,30 @@ class MMTFacility(BaseRoboticObservationFacility):
         return f"https://scheduler.mmto.arizona.edu/catalog.php?token={token}"
 
     def get_facility_status(self):
-        queues = pymmt.Instruments().get_instruments()
+        api = pymmt.Instruments()
+        try:
+            queues = api.get_instruments()
+        except KeyError:
+            queues = []
         if queues:
             status = queues[0].get('name', 'UNKNOWN')
         else:
-            response = requests.get('https://scheduler.mmto.arizona.edu/APIv2/trimester//schedule/all')
-            schedule = response.json()
-            for run in schedule['published']['runs']:
-                start = datetime.strptime(run['start'], '%Y-%m-%d %H:%M:%S-%f')
-                end = datetime.strptime(run['end'], '%Y-%m-%d')
-                if start < datetime.now() < end:
-                    if run.get('instrument') is not None:
-                        status = f"{run['instrument']['name']} ({run['title']})"
-                    else:
-                        status = run['title']
-                    break
+            response = requests.get(api.url)  # api.url is only set after running api.get_instruments()
+            if response.ok:
+                schedule = response.json()
+                for run in schedule['published']['runs']:
+                    start = datetime.strptime(run['start'], '%Y-%m-%d %H:%M:%S-%f')
+                    end = datetime.strptime(run['end'], '%Y-%m-%d')
+                    if start < datetime.now() < end:
+                        if run.get('instrument') is not None:
+                            status = f"{run['instrument']['name']} ({run['title']})"
+                        else:
+                            status = run['title']
+                        break
+                else:
+                    status = 'NO RUN SCHEDULED'
             else:
-                status = 'NO RUN SCHEDULED'
+                status = 'UNKNOWN'
         facility_status = {
             'code': 'MMT',
             'sites': [{
