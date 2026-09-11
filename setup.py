@@ -7,7 +7,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='tom-mmt',
-    version='0.1.6',
+    version='0.1.7',
     description='MMT Observatory module for the TOM Toolkit',
     long_description=long_description,
     long_description_content_type='text/markdown',

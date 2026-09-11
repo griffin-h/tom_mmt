@@ -10,6 +10,7 @@ from django.core.files.base import ContentFile
 from crispy_forms.layout import Layout, Row, Column
 from crispy_forms.bootstrap import AppendedText
 import pymmt
+import urllib
 from django.conf import settings
 import requests
 from datetime import datetime
@@ -20,6 +21,8 @@ import os
 import logging
 
 logger = logging.getLogger(__name__)
+
+CATALOG_URL = pymmt.api().base.replace('APIv2', 'catalog.php')
 
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
@@ -434,7 +437,7 @@ class MMTFacility(BaseRoboticObservationFacility):
     def get_observation_url(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
         # javascript is required to get to the observation_id level, but this is close enough
-        return f"https://scheduler.mmto.arizona.edu/catalog.php?token={token}"
+        return f"{CATALOG_URL}?token={token}"
 
     def get_facility_status(self):
         api = pymmt.Instruments()
