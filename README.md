@@ -24,6 +24,7 @@ Add your API keys to the `FACILITIES` dictionary inside `settings.py`:
 FACILITIES = {
    ...
     'MMT': {
+        'scheduler_url': 'https://scheduler.mmto.arizona.edu',
         'programs': {
             'Binospec': [
                 ('3hirty2wocharacterapitoken4ormmt', 'Human-Readable Program Name'),

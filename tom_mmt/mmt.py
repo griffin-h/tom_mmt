@@ -22,8 +22,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-CATALOG_URL = pymmt.api().base.replace('APIv2', 'catalog.php')
-
 
 class MMTBaseObservationForm(BaseRoboticObservationForm):
     magnitude = forms.FloatField()
@@ -355,14 +353,14 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def data_products(self, observation_id, product_id=None):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        datalist = pymmt.Datalist(token=token)
+        datalist = pymmt.Datalist(token=token, base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         datalist.get(targetid=observation_id, data_type='reduced')
 
         # flatten the dictionary structure across all data sets
         data_products = []
         for datalist in datalist.data:
             for file_info in datalist['datafiles']:
-                image = pymmt.Image(token=token)
+                image = pymmt.Image(token=token, base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
                 image._build_url({'datafileid': file_info['id'], 'token': token})
                 file_info['url'] = image.url
                 if product_id is None or file_info['id'] == int(product_id):  # None means get all of them
@@ -399,7 +397,8 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def get_observation_status(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        target = pymmt.Target(token=token, payload={'targetid': observation_id})
+        target = pymmt.Target(token=token, payload={'targetid': observation_id},
+                              base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         if not target.request.ok:
             status = 'UNKNOWN'
         elif target.disabled:
@@ -413,14 +412,16 @@ class MMTFacility(BaseRoboticObservationFacility):
         return {'state': status, 'scheduled_start': None, 'scheduled_end': None}
 
     def submit_observation(self, observation_payload):
-        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload)
+        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload,
+                              base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         target.post()
         target.upload_finder(observation_payload['finder_chart'])
         return [target.id]
 
     def validate_observation(self, observation_payload):
         # Target.validate is automatically called by Target.__init__
-        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload)
+        target = pymmt.Target(token=observation_payload['program'], payload=observation_payload,
+                              base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         return target.message['Errors']
 
     def get_terminal_observing_states(self):
@@ -431,16 +432,17 @@ class MMTFacility(BaseRoboticObservationFacility):
 
     def cancel_observation(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
-        target = pymmt.Target(token=token, payload={'targetid': observation_id})
+        target = pymmt.Target(token=token, payload={'targetid': observation_id},
+                              base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         target.delete()
 
     def get_observation_url(self, observation_id):
         token = ObservationRecord.objects.get(observation_id=observation_id).parameters.get('program')
         # javascript is required to get to the observation_id level, but this is close enough
-        return f"{CATALOG_URL}?token={token}"
+        return f"{settings.FACILITIES['MMT']['scheduler_url']}/catalog.php?token={token}"
 
     def get_facility_status(self):
-        api = pymmt.Instruments()
+        api = pymmt.Instruments(base=settings.FACILITIES['MMT']['scheduler_url'] + '/APIv2')
         try:
             queues = api.get_instruments()
         except KeyError:
